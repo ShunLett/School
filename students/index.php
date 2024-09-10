@@ -13,10 +13,10 @@
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Students</h1>
-    <button type="button" class="btn btn-sm btn-outline-secondary">
+    <a href="<?= PROJECT_ROOT ?>/students/add.php" type="button" class="btn btn-sm btn-outline-secondary">
       <span data-feather="plus"></span>
       Create New
-    </button>
+    </a>  
   </div>
 
   <h2>Listing</h2>
@@ -39,10 +39,10 @@
               </a>
             </td>
             <td>
-              <a href="" class="btn btn-warning">
+              <a href="<?= PROJECT_ROOT ?>/students/edit.php?id=<?= $row['id'] ?>" class="btn btn-warning">
               <i class="fa-solid fa-pen-to-square"></i>
               </a>
-              <a href="" class="btn btn-danger">
+              <a href="<?= PROJECT_ROOT ?>/students/delete.php?id=<?= $row['id'] ?>" class="btn btn-danger">
               <i class="fa-solid fa-trash"></i>
               </a>
             </td>

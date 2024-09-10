@@ -1,55 +1,81 @@
 <?php include_once('../partials/header.php'); ?>
 
 <?php
-  if (!isset($_GET['id'])) {
+if (!isset($_GET['id'])) {
     header('Location: index.php');
-  }
+}
 
-  $id = $_GET['id'];
+$id = $_GET['id'];
 
-  $sql = "SELECT * FROM students WHERE id=$id";
+// Use prepared statements to prevent SQL injection
+$sql = "SELECT * FROM students WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
 
-  $result = $conn->query($sql);
-
-  $row = $result->fetch_assoc();
-
-  if (!$row) {
+if (!$row) {
     header('Location: index.php');
-  }
+    exit();
+}
 
-  $sql_classes = "SELECT * FROM `classes` JOIN registrations ON registrations.class_id = classes.id WHERE registrations.student_id = $id";
+// Fetch attended classes
+$sql_classes = "SELECT * FROM `classes` JOIN registrations ON registrations.class_id = classes.id WHERE registrations.student_id = ?";
+$stmt_classes = $conn->prepare($sql_classes);
+$stmt_classes->bind_param("i", $id);
+$stmt_classes->execute();
+$result_classes = $stmt_classes->get_result();
 
-  $result_classes = $conn->query($sql_classes);
+// Fetch available classes that the student is not enrolled in
+$sql_available_classes = "SELECT * FROM `classes` WHERE id NOT IN (SELECT class_id FROM registrations WHERE student_id = ?)";
+$stmt_available_classes = $conn->prepare($sql_available_classes);
+$stmt_available_classes->bind_param("i", $id);
+$stmt_available_classes->execute();
+$result_available_classes = $stmt_available_classes->get_result();
 
-  if (!$result_classes) {
-    die('query failed: ' . $conn->error);
-  }
+// Handle class enrollment
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['class_id'])) {
+    $class_id = $_POST['class_id'];
+    $sql_enroll = "INSERT INTO registrations (student_id, class_id) VALUES (?, ?)";
+    $stmt_enroll = $conn->prepare($sql_enroll);
+    $stmt_enroll->bind_param("ii", $id, $class_id);
+
+    if ($stmt_enroll->execute()) {
+        // Redirect to refresh the page and avoid form resubmission
+        header("Location: show.php?id=$id");
+        exit();
+    } else {
+        echo "<div class='alert alert-danger'>Failed to enroll in the class.</div>";
+    }
+}
 ?>
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Students</h1>
+    <h1 class="h2">Student Details</h1>
   </div>
 
   <h2>
-    <a href="<?= PROJECT_ROOT ?>/students" type="button" class="btn btn-sm btn-outline-secondary">
-    <i class="fa-solid fa-arrow-left"></i>
+    <a href="<?= PROJECT_ROOT ?>/students/index.php" type="button" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left"></i>
+      Back to List
     </a>
-    Detail
   </h2>
+
   <div class="row my-5">
     <div class="col-6">
       <div class="row">
         <div class="col-3">Name</div>
-        <div class="col-7 fw-bold"><?= $row['first_name'].' '.$row['last_name'] ?></div>
+        <div class="col-7 fw-bold"><?= htmlspecialchars($row['first_name'].' '.$row['last_name'], ENT_QUOTES, 'UTF-8') ?></div>
       </div>
       <div class="row mt-2">
         <div class="col-3">Email</div>
-        <div class="col-7 fw-bold"><?= $row['email'] ?></div>
+        <div class="col-7 fw-bold"><?= htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') ?></div>
       </div>
       <div class="row mt-2">
         <div class="col-3">Enrollment Date</div>
-        <div class="col-7 fw-bold"><?= $row['enrollment_date'] ?></div>
+        <div class="col-7 fw-bold"><?= htmlspecialchars($row['enrollment_date'], ENT_QUOTES, 'UTF-8') ?></div>
       </div>
     </div>
   </div>
@@ -58,11 +84,12 @@
 
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h3>Attended Classes</h3>
-    <button type="button" class="btn btn-sm btn-outline-secondary">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#enrollClassModal">
       <span data-feather="plus"></span>
       Enroll Class
     </button>
   </div>
+  
   <div class="table-responsive">
     <table class="table table-striped table-sm">
       <thead>
@@ -76,18 +103,48 @@
       <tbody>
         <?php while($row_class = $result_classes->fetch_assoc()) { ?>
           <tr>
-            <td><?= $row_class['id'] ?></td>
+            <td><?= htmlspecialchars($row_class['id'], ENT_QUOTES, 'UTF-8') ?></td>
             <td>
-              <a href="<?= PROJECT_ROOT ?>/classes/show.php?id=<?= $row_class['id'] ?>">
-                <?= $row_class['name'] ?>
+              <a href="<?= PROJECT_ROOT ?>/classes/show.php?id=<?= htmlspecialchars($row_class['id'], ENT_QUOTES, 'UTF-8') ?>">
+                <?= htmlspecialchars($row_class['name'], ENT_QUOTES, 'UTF-8') ?>
               </a>
             </td>
-            <td>Aug 01, 2024</td>
-            <td>Sep 30, 2024</td>
+            <td><?= htmlspecialchars($row_class['start_date'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($row_class['end_date'], ENT_QUOTES, 'UTF-8') ?></td>
           </tr>
         <?php } ?>
       </tbody>
     </table>
+  </div>
+
+  <!-- Enroll Class Modal -->
+  <div class="modal fade" id="enrollClassModal" tabindex="-1" aria-labelledby="enrollClassModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="">
+          <div class="modal-header">
+            <h5 class="modal-title" id="enrollClassModalLabel">Enroll in a Class</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="class_id">Select Class</label>
+              <select name="class_id" id="class_id" class="form-control" required>
+                <?php while ($available_class = $result_available_classes->fetch_assoc()) { ?>
+                  <option value="<?= htmlspecialchars($available_class['id'], ENT_QUOTES, 'UTF-8') ?>">
+                    <?= htmlspecialchars($available_class['name'], ENT_QUOTES, 'UTF-8') ?>
+                  </option>
+                <?php } ?>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Enroll</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </main>
 

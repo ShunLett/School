@@ -32,7 +32,7 @@
 
   <h2>
     <a href="<?= PROJECT_ROOT ?>/courses" type="button" class="btn btn-sm btn-outline-secondary">
-      <span data-feather="arrow-left"></span>
+    <i class="fa-solid fa-arrow-left"></i>
     </a>
     Create New
   </h2>

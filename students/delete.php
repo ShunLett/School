@@ -3,15 +3,15 @@ include_once('../partials/header.php'); // Include header
 include_once('../config.php'); // Include your database connection file
 
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    die('Course ID is required.');
+    die('Student ID is required.');
 }
 
-$course_id = $_GET['id'];
+$student_id = $_GET['id'];
 
 // Prepare SQL statement to prevent SQL injection
-$sql = "DELETE FROM `courses` WHERE `id` = ?";
+$sql = "DELETE FROM `students` WHERE `id` = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $course_id);
+$stmt->bind_param("s", $student_id);
 
 // Execute the statement
 if ($stmt->execute()) {
