@@ -11,10 +11,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Automatically set enrollment date to current date
         $enrollment_date = date('Y-m-d'); // Format: YYYY-MM-DD
 
+        // Generate the next student_id (e.g., S000001)
+        $sql_latest_id = "SELECT student_id FROM students ORDER BY id DESC LIMIT 1";
+        $result = $conn->query($sql_latest_id);
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $last_student_id = $row['student_id'];
+            // Extract the numeric part and increment it
+            $number = (int)substr($last_student_id, 1) + 1;
+            $student_id = 'S' . str_pad($number, 6, '0', STR_PAD_LEFT);
+        } else {
+            // First student entry
+            $student_id = 'S000001';
+        }
+
         // Use prepared statements to prevent SQL injection
-        $sql_insert = "INSERT INTO `students` (`first_name`, `last_name`, `email`, `enrollment_date`) VALUES (?, ?, ?, ?)";
+        $sql_insert = "INSERT INTO `students` (`student_id`, `first_name`, `last_name`, `email`, `enrollment_date`) VALUES (?, ?, ?, ?, ?)";
         $stmt_insert = $conn->prepare($sql_insert);
-        $stmt_insert->bind_param("ssss", $first_name, $last_name, $email, $enrollment_date);
+        $stmt_insert->bind_param("sssss", $student_id, $first_name, $last_name, $email, $enrollment_date);
         $stmt_insert->execute();
 
         if ($stmt_insert->affected_rows > 0) {

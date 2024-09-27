@@ -7,7 +7,6 @@ if (!isset($_GET['id'])) {
 
 $id = $_GET['id'];
 
-// Use prepared statements to prevent SQL injection
 $sql = "SELECT * FROM students WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id);
@@ -21,13 +20,27 @@ if (!$row) {
 }
 
 // Fetch attended classes
-$sql_classes = "SELECT * FROM `classes` JOIN registrations ON registrations.class_id = classes.id WHERE registrations.student_id = ?";
+$sql_classes = "SELECT classes.*, registrations.*, DATE_FORMAT(classes.time, '%h:%i %p') AS formatted_time FROM `classes` 
+                JOIN registrations ON registrations.class_id = classes.id 
+                WHERE registrations.student_id = ?";
 $stmt_classes = $conn->prepare($sql_classes);
 $stmt_classes->bind_param("i", $id);
 $stmt_classes->execute();
 $result_classes = $stmt_classes->get_result();
 
-// Fetch available classes that the student is not enrolled in
+$sql_credits = "SELECT SUM(classes.credits) AS total_credits 
+                FROM classes 
+                JOIN registrations ON registrations.class_id = classes.id 
+                WHERE registrations.student_id = ?";
+$stmt_credits = $conn->prepare($sql_credits);
+$stmt_credits->bind_param("i", $id);
+$stmt_credits->execute();
+$result_credits = $stmt_credits->get_result();
+$credits_row = $result_credits->fetch_assoc();
+$total_credits = $credits_row['total_credits'] ?? 0;
+$is_certified = ($total_credits >= 25) ? 'Yes' : 'No';
+
+// Fetch available classes
 $sql_available_classes = "SELECT * FROM `classes` WHERE id NOT IN (SELECT class_id FROM registrations WHERE student_id = ?)";
 $stmt_available_classes = $conn->prepare($sql_available_classes);
 $stmt_available_classes->bind_param("i", $id);
@@ -42,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['class_id'])) {
     $stmt_enroll->bind_param("ii", $id, $class_id);
 
     if ($stmt_enroll->execute()) {
-        // Redirect to refresh the page and avoid form resubmission
         header("Location: show.php?id=$id");
         exit();
     } else {
@@ -74,6 +86,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['class_id'])) {
         <div class="col-7 fw-bold"><?= htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') ?></div>
       </div>
       <div class="row mt-2">
+        <div class="col-3">Credits</div>
+        <div class="col-7 fw-bold"><?= htmlspecialchars($total_credits, ENT_QUOTES, 'UTF-8') ?></div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-3">Certified</div>
+        <div class="col-7 fw-bold"><?= htmlspecialchars($is_certified, ENT_QUOTES, 'UTF-8') ?></div>
+    </div>
+
+      <div class="row mt-2">
         <div class="col-3">Enrollment Date</div>
         <div class="col-7 fw-bold"><?= htmlspecialchars($row['enrollment_date'], ENT_QUOTES, 'UTF-8') ?></div>
       </div>
@@ -91,33 +112,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['class_id'])) {
   </div>
   
   <div class="table-responsive">
-    <table class="table table-striped table-sm">
-      <thead>
+  <table class="table table-striped table-sm">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+        <th scope="col">Credits</th> 
+        <th scope="col">Time</th> 
+        <th scope="col">Start Date</th>
+        <th scope="col">End Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php while($row_class = $result_classes->fetch_assoc()) { ?>
         <tr>
-          <th scope="col">#</th>
-          <th scope="col">Name</th>
-          <th scope="col">Start Date</th>
-          <th scope="col">End Date</th>
+          <td><?= htmlspecialchars($row_class['id'], ENT_QUOTES, 'UTF-8') ?></td>
+          <td>
+            <a href="<?= PROJECT_ROOT ?>/classes/show.php?id=<?= htmlspecialchars($row_class['id'], ENT_QUOTES, 'UTF-8') ?>">
+              <?= htmlspecialchars($row_class['name'], ENT_QUOTES, 'UTF-8') ?>
+            </a>
+          </td>
+          <td><?= htmlspecialchars($row_class['credits'], ENT_QUOTES, 'UTF-8') ?></td> 
+          <td><?= htmlspecialchars($row_class['formatted_time'], ENT_QUOTES, 'UTF-8') ?></td> 
+          <td><?= htmlspecialchars($row_class['start_date'], ENT_QUOTES, 'UTF-8') ?></td>
+          <td><?= htmlspecialchars($row_class['end_date'], ENT_QUOTES, 'UTF-8') ?></td>
         </tr>
-      </thead>
-      <tbody>
-        <?php while($row_class = $result_classes->fetch_assoc()) { ?>
-          <tr>
-            <td><?= htmlspecialchars($row_class['id'], ENT_QUOTES, 'UTF-8') ?></td>
-            <td>
-              <a href="<?= PROJECT_ROOT ?>/classes/show.php?id=<?= htmlspecialchars($row_class['id'], ENT_QUOTES, 'UTF-8') ?>">
-                <?= htmlspecialchars($row_class['name'], ENT_QUOTES, 'UTF-8') ?>
-              </a>
-            </td>
-            <td><?= htmlspecialchars($row_class['start_date'], ENT_QUOTES, 'UTF-8') ?></td>
-            <td><?= htmlspecialchars($row_class['end_date'], ENT_QUOTES, 'UTF-8') ?></td>
-          </tr>
-        <?php } ?>
-      </tbody>
-    </table>
-  </div>
+      <?php } ?>
+    </tbody>
+  </table>
+</div>
 
-  <!-- Enroll Class Modal -->
   <div class="modal fade" id="enrollClassModal" tabindex="-1" aria-labelledby="enrollClassModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">

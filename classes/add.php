@@ -18,19 +18,19 @@ if (!$result_courses) {
     die('Query failed: ' . $conn->error);
 }
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (!empty($_POST['name']) && !empty($_POST['teacher_id']) && !empty($_POST['course_id']) && !empty($_POST['start_date']) && !empty($_POST['end_date'])) {
+    if (!empty($_POST['name']) && !empty($_POST['teacher_id']) && !empty($_POST['course_id']) && !empty($_POST['start_date']) && !empty($_POST['end_date']) && !empty($_POST['time']) && !empty($_POST['credits'])) {
         $name = $_POST['name'];
         $teacher_id = $_POST['teacher_id'];
         $course_id = $_POST['course_id'];
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
+        $time = $_POST['time'];
+        $credits = $_POST['credits']; 
 
-        // Insert new class record
-        $sql_insert = "INSERT INTO `classes` (`name`, `teacher_id`, `course_id`, `start_date`, `end_date`) VALUES (?, ?, ?, ?, ?)";
+        $sql_insert = "INSERT INTO `classes` (`name`, `teacher_id`, `course_id`, `start_date`, `end_date`, `time`, `credits`) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt_insert = $conn->prepare($sql_insert);
-        $stmt_insert->bind_param("sssss", $name, $teacher_id, $course_id, $start_date, $end_date);
+        $stmt_insert->bind_param("ssssssi", $name, $teacher_id, $course_id, $start_date, $end_date, $time, $credits);
 
         if ($stmt_insert->execute()) {
             echo 'Class created successfully.';
@@ -79,6 +79,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                 </div>
                 <div class="row">
+                    <div class="col-3">Credits (<span class="text-danger">*</span>)</div> 
+                    <div class="col-7 fw-bold">
+                        <input type="number" name="credits" class="form-control" required /> 
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-3">Course (<span class="text-danger">*</span>)</div>
                     <div class="col-7 fw-bold">
                         <select name="course_id" class="form-control" required>
@@ -101,6 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div class="col-3">End Date (<span class="text-danger">*</span>)</div>
                     <div class="col-7 fw-bold">
                         <input type="date" name="end_date" class="form-control" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-3">Time (<span class="text-danger">*</span>)</div> 
+                    <div class="col-7 fw-bold">
+                        <input type="time" name="time" class="form-control" required /> 
                     </div>
                 </div>
                 <div class="row">

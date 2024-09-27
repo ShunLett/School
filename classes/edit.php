@@ -9,7 +9,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $class_id = $_GET['id'];
 
-
+// Fetch the class details
 $sql_class = "SELECT * FROM `classes` WHERE `id` = ?";
 $stmt_class = $conn->prepare($sql_class);
 $stmt_class->bind_param("i", $class_id);
@@ -21,7 +21,7 @@ if (!$class) {
     die('Class not found.');
 }
 
-
+// Fetch teachers
 $sql_teachers = "SELECT id, name FROM `teachers`";
 $result_teachers = $conn->query($sql_teachers);
 
@@ -29,7 +29,7 @@ if (!$result_teachers) {
     die('Query failed: ' . $conn->error);
 }
 
-
+// Fetch courses
 $sql_courses = "SELECT id, name FROM `courses`";
 $result_courses = $conn->query($sql_courses);
 
@@ -37,18 +37,19 @@ if (!$result_courses) {
     die('Query failed: ' . $conn->error);
 }
 
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (!empty($_POST['name']) && !empty($_POST['teacher_id']) && !empty($_POST['course_id']) && !empty($_POST['start_date']) && !empty($_POST['end_date'])) {
+    if (!empty($_POST['name']) && !empty($_POST['teacher_id']) && !empty($_POST['course_id']) && !empty($_POST['start_date']) && !empty($_POST['end_date']) && !empty($_POST['time']) && !empty($_POST['credits'])) {
         $name = $_POST['name'];
         $teacher_id = $_POST['teacher_id'];
         $course_id = $_POST['course_id'];
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
-
-        $sql_update = "UPDATE `classes` SET `name` = ?, `teacher_id` = ?, `course_id` = ?, `start_date` = ?, `end_date` = ? WHERE `id` = ?";
+        $time = $_POST['time'];
+        $credits = $_POST['credits'];
+      
+        $sql_update = "UPDATE `classes` SET `name` = ?, `teacher_id` = ?, `course_id` = ?, `start_date` = ?, `end_date` = ?, `time` = ?, `credits` = ? WHERE `id` = ?";
         $stmt_update = $conn->prepare($sql_update);
-        $stmt_update->bind_param("sssssi", $name, $teacher_id, $course_id, $start_date, $end_date, $class_id);
+        $stmt_update->bind_param("sssssssi", $name, $teacher_id, $course_id, $start_date, $end_date, $time, $credits, $class_id);
         $stmt_update->execute();
 
         if ($stmt_update->affected_rows > 0) {
@@ -89,6 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </select>
         </div>
         <div class="mb-3">
+            <label for="credits" class="form-label">Credits</label>
+            <input type="number" name="credits" id="credits" class="form-control" value="<?= htmlspecialchars($class['credits'], ENT_QUOTES, 'UTF-8') ?>" required>
+        </div>
+        <div class="mb-3">
             <label for="course_id" class="form-label">Course</label>
             <select name="course_id" id="course_id" class="form-control" required>
                 <option value="">Select Course</option>
@@ -106,6 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="mb-3">
             <label for="end_date" class="form-label">End Date</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= htmlspecialchars($class['end_date'], ENT_QUOTES, 'UTF-8') ?>" required>
+        </div>
+        <div class="mb-3">
+            <label for="time" class="form-label">Time</label> 
+            <input type="time" class="form-control" id="time" name="time" value="<?= htmlspecialchars($class['time'], ENT_QUOTES, 'UTF-8') ?>" required>
         </div>
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>

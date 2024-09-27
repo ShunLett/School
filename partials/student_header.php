@@ -12,7 +12,7 @@
   <meta name="description" content="">
   <meta name="author" content="School Management System">
   <meta name="generator" content="Hugo 0.84.0">
-  <title>School Management System</title>
+  <title>Student Dashboard</title>
 
   <link href="<?= PROJECT_ROOT ?>/assets/bootstrap.min.css" rel="stylesheet"/>
 
@@ -55,4 +55,4 @@
   </header>
   <div class="container-fluid">
     <div class="row">
-      <?php include_once('sidebar.php'); ?>
+      <?php include_once('student_sidebar.php'); ?>

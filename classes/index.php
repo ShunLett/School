@@ -1,16 +1,13 @@
 <?php
 
 include_once('../partials/header.php');
-
-
-$sqlClasses = "SELECT * FROM `classes`";
+$sqlClasses = "SELECT id, name, course_id, teacher_id, credits, DATE_FORMAT(time, '%h:%i %p') AS time, start_date, end_date FROM `classes`";
 $resultClasses = $conn->query($sqlClasses);
 
 if (!$resultClasses) {
     die('Query failed: ' . $conn->error);
 }
 $classes = $resultClasses->fetch_all(MYSQLI_ASSOC);
-
 
 $sqlCourses = "SELECT id, name FROM `courses`";
 $resultCourses = $conn->query($sqlCourses);
@@ -20,7 +17,6 @@ if (!$resultCourses) {
 }
 $courses = $resultCourses->fetch_all(MYSQLI_ASSOC);
 
-
 $sqlTeachers = "SELECT id, name FROM `teachers`";
 $resultTeachers = $conn->query($sqlTeachers);
 
@@ -28,7 +24,6 @@ if (!$resultTeachers) {
     die('Query failed: ' . $conn->error);
 }
 $teachers = $resultTeachers->fetch_all(MYSQLI_ASSOC);
-
 
 $courseLookup = [];
 foreach ($courses as $course) {
@@ -64,10 +59,11 @@ foreach ($teachers as $teacher) {
             <table class="table table-striped table-sm">
                 <thead>
                     <tr>
-                       
                         <th scope="col">Name</th>
                         <th scope="col">Course</th>
                         <th scope="col">Teacher</th>
+                        <th scope="col">Credits</th> 
+                        <th scope="col">Time</th>
                         <th scope="col">Start Date</th>
                         <th scope="col">End Date</th>
                         <th scope="col">Actions</th>
@@ -76,10 +72,11 @@ foreach ($teachers as $teacher) {
                 <tbody>
                     <?php foreach ($classes as $class): ?>
                         <tr>
-                           
                             <td><?= htmlspecialchars($class['name']) ?></td>
                             <td><?= htmlspecialchars($courseLookup[$class['course_id']] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($teacherLookup[$class['teacher_id']] ?? 'N/A') ?></td>
+                            <td><?= htmlspecialchars($class['credits'] ?? 'N/A') ?></td> 
+                            <td><?= htmlspecialchars($class['time'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($class['start_date']) ?></td>
                             <td><?= htmlspecialchars($class['end_date']) ?></td>
                             <td>

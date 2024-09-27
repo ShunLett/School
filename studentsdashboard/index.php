@@ -1,10 +1,8 @@
-<?php include_once('../partials/student_header.php'); ?> <!-- Using the new student-specific header -->
+<?php include_once('../partials/student_header.php'); ?> 
 <?php
-// Assuming session holds the student's ID
 session_start();
 $student_id = $_SESSION['student_id'];
 
-// Fetch student information
 $sql = "SELECT * FROM students WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $student_id);
@@ -12,7 +10,6 @@ $stmt->execute();
 $result = $stmt->get_result();
 $student = $result->fetch_assoc();
 
-// Fetch classes the student is enrolled in
 $sql_classes = "SELECT classes.*, DATE_FORMAT(classes.time, '%h:%i %p') AS formatted_time 
                 FROM `classes` 
                 JOIN registrations ON registrations.class_id = classes.id 
@@ -22,7 +19,6 @@ $stmt_classes->bind_param("i", $student_id);
 $stmt_classes->execute();
 $result_classes = $stmt_classes->get_result();
 
-// Fetch total credits and check certification eligibility
 $sql_credits = "SELECT SUM(classes.credits) AS total_credits 
                 FROM classes 
                 JOIN registrations ON registrations.class_id = classes.id 
@@ -41,12 +37,10 @@ $is_certified = ($total_credits >= 25) ? 'Yes' : 'No';
     <h1 class="h2">Welcome, <?= htmlspecialchars($student['first_name'].' '.$student['last_name'], ENT_QUOTES, 'UTF-8') ?></h1>
   </div>
 
-  <!-- Display Certification Status -->
   <div class="alert alert-info">
     <strong>Eligible for Certificate:</strong> <?= htmlspecialchars($is_certified, ENT_QUOTES, 'UTF-8') ?>
   </div>
 
-  <!-- Display enrolled classes -->
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h3>Your Enrolled Classes</h3>
   </div>

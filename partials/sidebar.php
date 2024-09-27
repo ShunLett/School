@@ -2,7 +2,6 @@
 <?php
   $url = $_SERVER['REQUEST_URI'];
 
-  // Split the URL by '/' and get the second-to-last segment
   $segments = explode('/', trim($url, '/'));
 
   if (strpos($url, 'index.php') === false) {
@@ -16,8 +15,8 @@
     <ul class="nav flex-column">
       <li class="nav-item">
         <a class="nav-link <?= $module == 'dashboard' ? 'active' : '' ?>" aria-current="page" href="<?= PROJECT_ROOT ?>/dashboard">
-          <span data-feather="home"></span>
-          Dashboard
+        <i class="fa-solid fa-house"></i>
+        Main
         </a>
       </li>
       <li class="nav-item">
